@@ -29,7 +29,7 @@ function CombinedModel(;
     )   
     pwr_sys = pwr_model(;kwargs...)    
     gas_sys = gas_model(;kwargs...)
-    controller = isnothing(control_model) ? nothing : control_model(;kwargs...)
+    controller = control_model(;kwargs...)
     CombinedModel(pwr_sys, gas_sys, controller, dt, 0.0, duration)
 end
 

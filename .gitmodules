@@ -1,0 +1,3 @@
+[submodule "deps/GasNetModel.jl"]
+	path = deps/GasNetModel.jl
+	url = git@github.com:laurentpagnier/GasNetModel.jl.git

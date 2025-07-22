@@ -1,15 +1,19 @@
 export SimpleController
 
 struct SimpleController <: Controller
+    max_act::Int
 end
 
+function SimpleController(; max_act= 5, kwargs...)
+    return SimpleController(max_act)
+end
 
 function control!(model::Union{CongestionFreeModel,OPFModel}, controller::SimpleController, t)
     demand = get_current_demand(model, t)
     if typeof(model) == OPFModel
         demand = model.PMModel["baseMVA"] * sum([v for (i,v) in demand])
     end
-    avail_act = 5
+    avail_act = controller.max_act
     units = model.units
     action = repeat([:do_nothing],length(units))
     sense, amount = trival_fleet_adjustment(model, demand)
@@ -73,7 +77,6 @@ function control!(model::LinepackModel, controller::SimpleController, t)
 end
 
 
-#=
 function control!(model::GasNetworkModel, controller::SimpleController, t)
     for i in keys(model.gas_injections)
         pressure = model.nodal_pressure[i]
@@ -85,4 +88,3 @@ function control!(model::GasNetworkModel, controller::SimpleController, t)
     end
     nothing
 end
-=#
