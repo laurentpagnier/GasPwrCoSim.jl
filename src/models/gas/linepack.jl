@@ -11,7 +11,8 @@ end
 function LinepackModel(;
     gas_folder = "../data/gas_data",
     initial_linepack = 60_000.0,
-    max_injection = 26_000.0
+    max_injection = 26_000.0,
+    kwargs...
 )
     injection = 0.0
     LinepackModel(initial_linepack, initial_linepack, injection, max_injection)

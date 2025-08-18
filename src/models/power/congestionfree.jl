@@ -27,7 +27,7 @@ function CongestionFreeModel(;
     df = DataFrame(CSV.File(joinpath(pwr_folder, "demand.csv")))
     elc_demand = LinearInterpolation(df.var"time [s]", df.var"demand [MW]") 
     
-    units = create_fleet(dt = dt)
+    units = create_fleet(pwr_folder=pwr_folder, dt=dt)
     generation, load_shedding = 0., 0.
     pwr_sys = CongestionFreeModel(units, elc_demand, reserve, generation, load_shedding,
         load_shedding_cost)
