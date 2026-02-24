@@ -16,6 +16,7 @@ function reset!(model::CombinedModel)
     model.t = 0.0
     reset!(model.pwr_sys)
     reset!(model.gas_sys)
+    reset!(model.controller)
     nothing
 end
 
@@ -63,5 +64,6 @@ function display(model::CombinedModel)
     print("t=$(model.t) | ")
     display(model.gas_sys)
     display(model.pwr_sys)
+    display(model.controller)
     println("")
 end

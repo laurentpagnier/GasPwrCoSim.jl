@@ -3,18 +3,16 @@ mutable struct DCWithShedPPowerModel <: AbstractDCPModel @pm_fields end
 
 function build_opf_w_shed(pm::DCWithShedPPowerModel)
     variable_load_shedding(pm)
-    variable_gen_shedding(pm)
     build_opf(pm)
     objective_add_shedding_cost(pm)
 end
 
-#=
 function build_opf_w_reserve(pm::DCWithShedPPowerModel)
     #variable_load_shedding(pm)
     build_opf(pm)
     objective_add_shedding_cost(pm)
 end
-=#
+
 
 function add_energy_not_serve_price!(data, prices=nothing)
     for (i, l) in data["load"]
@@ -28,42 +26,24 @@ function variable_load_shedding(pm::AbstractPowerModel; nw::Int=nw_id_default, b
         [i in ids(pm, nw, :load)], base_name="$(nw)_shed",
         start = comp_start_value(ref(pm, nw, :load, i), "load_shedding")
     )
+
     if bounded
         for (i, load) in ref(pm, nw, :load)
             JuMP.set_lower_bound(shed[i], 0.0)
             JuMP.set_upper_bound(shed[i], load["pd"])
         end
     end
-    report && sol_component_value(pm, nw, :load, :shed, ids(pm, nw, :load), shed) 
-end
 
-
-function variable_gen_shedding(pm::AbstractPowerModel; nw::Int=nw_id_default, bounded::Bool=true, report::Bool=true)
-    shed_g = PowerModels.var(pm, nw)[:shed_g] = JuMP.@variable(pm.model,
-        [i in ids(pm, nw, :gen)], base_name="$(nw)_shed_g",
-        start = comp_start_value(ref(pm, nw, :gen, i), "gen_shedding")
-    )
-    if bounded
-    
-        for (i, gen) in ref(pm, nw, :gen)
-            JuMP.set_lower_bound(shed_g[i], 0.0)
-            JuMP.set_upper_bound(shed_g[i], gen["pmin"])
-        end
-    end
-    report && sol_component_value(pm, nw, :gen, :shed_g, ids(pm, nw, :gen), shed_g)
+    report && sol_component_value(pm, nw, :load, :shed, ids(pm, nw, :load), shed)
 end
 
 
 function objective_add_shedding_cost(pm::DCWithShedPPowerModel)
     for (n, network) in nws(pm)
         shed = get(PowerModels.var(pm, n), :shed, Dict()); #PowerModels._check_var_keys(p_d, bus_arcs_dc, "load shedding", "load")
-        shed_g = get(PowerModels.var(pm, n), :shed_g, Dict()); #PowerModels._check_var_keys(p_d, bus_arcs_dc, "load shedding", "load")
         shed_cost = 0.0
         for (i, load) in ref(pm, n, :load)
             shed_cost += shed[i] * load["ENS_price"]
-        end
-        for (i, gen) in ref(pm, n, :gen)
-            shed_cost += shed_g[i] * 10000
         end
         
         set_objective_function(pm.model,objective_function(pm.model) + shed_cost)
@@ -78,14 +58,13 @@ function PowerModels.constraint_power_balance(pm::DCWithShedPPowerModel, n::Int,
     psw  = get(PowerModels.var(pm, n),  :psw, Dict()); PowerModels._check_var_keys(psw, bus_arcs_sw, "active power", "switch")
     p_dc = get(PowerModels.var(pm, n), :p_dc, Dict()); PowerModels._check_var_keys(p_dc, bus_arcs_dc, "active power", "dcline")
     shed = get(PowerModels.var(pm, n), :shed, Dict()); #_check_var_keys(shed, bus_arcs_dc, "load shedding", "load")
-    shed_g = get(PowerModels.var(pm, n), :shed_g, Dict()); 
+    
     cstr = JuMP.@constraint(pm.model,
         sum(p[a] for a in bus_arcs)
         + sum(p_dc[a_dc] for a_dc in bus_arcs_dc)
         + sum(psw[a_sw] for a_sw in bus_arcs_sw)
         ==
         sum(pg[g] for g in bus_gens)
-        - sum(shed_g[g] for g in bus_gens)
         - sum(ps[s] for s in bus_storage)
         - sum(pd for pd in values(bus_pd))
         - sum(gs for gs in values(bus_gs))*1.0^2

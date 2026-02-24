@@ -1,4 +1,13 @@
+export control!
 struct NoController <: Controller
+end
+
+function reset!(controller::Controller)
+    nothing # by default nothing nothing
+end
+
+function display(controller::Controller)
+    nothing # by default nothing nothing
 end
 
 function control!(sys::Union{PowerSystem, GasSystem}, controller::Controller, t)

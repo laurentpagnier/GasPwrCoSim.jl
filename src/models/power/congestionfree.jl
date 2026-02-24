@@ -2,7 +2,7 @@ export CongestionFreeModel
 import Interpolations.LinearInterpolation
 import Interpolations.Extrapolation
 
-include("unit.jl")
+#include("unit.jl")
 
 mutable struct CongestionFreeModel <: PowerSystem
     units::Vector{Unit}
@@ -86,5 +86,5 @@ function display(model::CongestionFreeModel)
     n_off = [u.status == :off for u in model.units] |> sum
     #shed = get_sys_shedding(model) < 1E-5 ? 0.0 : get_sys_shedding(model)
     shed = round(Int, get_sys_shedding(model)) 
-    print("fleet=($n_main,$n_sec,$n_off) | shed=$shed | ")
+    print("fleet=(main:$n_main, sec:$n_sec, off:$n_off) | shed=$shed | ")
 end

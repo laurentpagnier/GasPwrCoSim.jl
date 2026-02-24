@@ -5,7 +5,7 @@ import Interpolations.Extrapolation
 using Ipopt
 
 include("opf_util.jl")
-include("unit.jl")
+#include("unit.jl")
 
 (dic::Dict{String, <:Extrapolation})(t::T)  where T <: Real = Dict([k => v(t) for (k,v) in dic])
 
@@ -19,7 +19,7 @@ end
 
 function OPFModel(;
         pwr_folder = "../data/power_data",
-        MP_case = "../data/Israeli Grid New/israel.json",
+        MP_case = "../data/power_data/network.json",
         reserve = 450.0, # in MW 
         dt = 5, # min
         init_interval = nothing,
@@ -67,9 +67,13 @@ function step!(model::OPFModel, t)
     # update the PowerModels models
     update_demand!(model, t)
     update_gen_status!(model)
+    for (i, g) in model.PMModel["gen"]
+        g["pg"] = 0.0 # reset power outputs
+    end
     
     # run an OPF with the updated model
     res = solve_model(model.PMModel, DCWithShedPPowerModel, optimizer_with_attributes(Ipopt.Optimizer, "print_level" =>0), build_opf_w_shed)
+
     PowerModels.update_data!(model.PMModel, res["solution"])
     for (i, g) in model.PMModel["gen"]
         model.units[parse(Int,i)].p = 100*g["pg"]
@@ -109,6 +113,8 @@ end
 
 
 function reset!(model::OPFModel)
+    # For the time being the initial state is assumed to be the 
+    # result of an OPF
     model.units .|>  u -> u.status = :off
 
     update_demand!(model::OPFModel, 0.0)
@@ -119,7 +125,7 @@ function reset!(model::OPFModel)
     end
     reserve = model.reserve
     units = model.units
-    gen = 0
+    gen = 0.0
     pool = collect(1:length(units))
     while gen < demand + reserve && !isempty(pool)
         id = rand(pool)
@@ -138,6 +144,6 @@ function display(model::OPFModel)
     demand = [l["pd"] for (i,l) in model.PMModel["load"]] |> sum
     demand = round(Int, model.PMModel["baseMVA"] * demand)
     shed =  round(Int, get_sys_shedding(model))
-    print("fleet=($n_main,$n_sec,$n_off) | shed=$shed | demand=$demand")
+    print("fleet=(main:$n_main, sec:$n_sec, off:$n_off) | shed=$shed | demand=$demand")
 end
 

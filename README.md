@@ -1,8 +1,64 @@
 # GasPwrCoSim.jl: a Co-Simulation and Co-Optimization Framework for Gas and Power Operations
 
-## Description of the Environment
+## Install
 
-The environment is consistent with the standard RL framework 
+Install julia by visiting: https://julialang.org/downloads/. 
+
+### Recommended
+
+Download using git,  with ``git clone --recurse-submodules <repo>``
+here \<repo\> depends on the version you want, default is ``git@github.com:laurentpagnier/GasPwrCoSim.jl.git``
+
+
+The package is in active development. We recommend to either create an environment and add the package in development mode. 
+**Environment**
+1. open pkg manager (press ])
+2. ``generate <my_env>``
+3. ``dev git@github.com:laurentpagnier/GasPwrCoSim.jl.git``
+
+
+### Deprecated 
+
+If for some reason you cannot or do not want to use git:
+1. Download a zipped version of GasPwrCoSim.jl, eg., https://github.com/laurentpagnier/GasPwrCoSim.jl/archive/refs/heads/main.zip
+2. Download a zipped (compatible) version of GasNetModel.jl, e.g., https://github.com/laurentpagnier/GasNetModel.jl/archive/refs/heads/main.zip
+3. Place GasNetModel.jl folder within  GasPwrCoSim.jl at the right location (i.e. in deps). (The main file should be accessible as GasPwrCoSim.jl/deps/GasNetModel.jl/src/GasNetModel.jl.)  
+4. In GasPwrCoSim.jl folder,  open julia terminal (or inversely open it and go to the folder) 
+	1. open pkg manager (press ])
+	2. run ```activate .```  
+	3. run  ```instantiate``` 
+	4. Return to the julia terminal by pressing backspace.
+
+
+## Citation
+If you used this package, please cite our work as
+
+```
+@inproceedings{pagnier2024system,
+  title={System-Wide Emergency Policy for Transitioning from Main to Secondary Fuel},
+  author={Pagnier, Laurent and Hyett, Criston and Ferrando, Robert and Goldshtein, Igal and Alisse, Jean and Saban, Lilah and Chertkov, Michael},
+  booktitle={2024 IEEE 63rd Conference on Decision and Control (CDC)},
+  pages={90--97},
+  year={2024},
+  organization={IEEE}
+}
+```
+Le
+```
+@inproceedings{hyett2024differentiable,
+  title={Differentiable Simulator For Dynamic \& Stochastic Optimal Gas \& Power Flows},
+  author={Hyett, Criston and Pagnier, Laurent and Alisse, Jean and Goldshtein, Igal and Saban, Lilah and Ferrando, Robert and Chertkov, Michael},
+  booktitle={2024 IEEE 63rd Conference on Decision and Control (CDC)},
+  pages={98--105},
+  year={2024},
+  organization={IEEE}
+}
+```
+
+
+## Description
+
+The main structure provided by this package is a combined model:
 
 ```
 mutable struct CombinedModel
@@ -14,85 +70,28 @@ mutable struct CombinedModel
     duration::Float64
 end
 ```
+It encompasses two infrastructure models and a controller that actuates  some of the joint system (but not necessary all of it). 
 
-This package currently supports the following models:
+
+As of today, this package currently supports the following models:
 *Gas Systems:*
-
-<ul>
-  <li>LinepackModel</li>
-  <li>GasNetworkModel</li>
-</ul> 
+- LinepackModel
+- GasNetworkModel
 
 *Power Systems:*
-<ul>
-  <li>CongestionFreeModel</li>
-  <li>OPFModel</li>
-</ul> 
+- CongestionFreeModel
+- OPFModel
 
-More models will be addded in future releases. 
+More models will be added in future releases. 
 
-You can also define your own models. The only requirements features are:
-```
-step!(model::Model, t)
-control!(model::Model,controller::Controller, t)
-```
-
-
-
-
-The package provides a generaic class for generators. This class displays stochastic nature of fuel transitions and start-ups as [Markov process](https://en.wikipedia.org/wiki/Markov_chain).
-```
-mutable struct Unit
-    pmin::Real  maximal output
-    pmax::Real # minimal output
-    p::Real # current output
-    fuel_input::Function
-    trans_steps::Int # # of steps based on the expected duration and chosen time step length
-    start_steps::Int
-    cost::Dict{Symbol, Any} # generation cost based on fuel
-    prob::Dict{Symbol, Any}
-    pressure_out::Real
-    gas_loc::Int
-    status::Symbol
-    state2int::Dict{Symbol, Int}
-    int2state::Dict{Int, Symbol}
-    int2act::Dict{Int, Symbol}
-    act2int::Dict{Symbol, Int}
-end
-```
-
-The nitty-gritty are hidden in the model
-```
-mutable struct CombinedModel
-    pwr_sys::PowerSystem
-    gas_sys::GasSystem
-    controller::Union{Nothing,Controller}
-    dt::Float64
-    t::Float64
-    duration::Float64
-end
-```
-
-To create a new compatible model it has to inherit from GasSystem (or PowerSystem) Here is the example of a LinepackModel
-```
-mutable struct LinepackModel <: GasSystem
-    linepack::Float64
-    initial_linepack::Union{Float64, ClosedInterval{Float64}}
-    injection::Float64
-    max_injection::Float64
-end
-```
-
-In a nut-shell, the combined model is evolved as
+**Evolution:** Basically a run consists of 
 ```
 reset!(model)
 while(model.t < model.duration)
     step!(model)
 end
 ```
-
-A time step starts the controller acting on the two system. Then, the
-systems are evolved for the duration of the time step.
+In detail, a time step starts the controller acting on the two systems, then they are evolved for the duration of the time step.
 ```
 function step!(model::CombinedModel)
     control!(model.pwr_sys, model.gas_sys, model.controller, model.t)
@@ -101,19 +100,9 @@ function step!(model::CombinedModel)
 end
 ```
 
-If no controller is defined the default control is *do nothing*
 
-
-The gas system is described as 
-```
-function control!(pwr_sys::PowerSystem, gas_sys::GasSystem, controller::Union{Controller,Nothing}, t)
-    control!(pwr_sys, controller, model.t)
-    control!(gas_sys, controller, model.t)
-    nothing
-end
-```
-
-The power system is described as 
+### Power Systems
+As an example let's have a look at the ```CongestionFree``` model
 ```
 mutable struct PowerSystem
     units::Vector{Unit}
@@ -123,47 +112,51 @@ mutable struct PowerSystem
     load_shedding::Float64
 end
 ```
-
-Finally, the units are defined as
+Units are defined as
 ```
 mutable struct Unit
     pmin::Real
     pmax::Real
     p::Real
-    fuel_input::Function
-    trans_steps::Int
-    start_steps::Int
-    cost::Dict{Symbol, Any}
-    prob::Dict{Symbol, Any}
-    pressure_out::Real
     gas_loc::Union{Int, Nothing}
     pwr_bus::Int
     status::Symbol
-    state2int::Dict{Symbol, Int}
-    int2state::Dict{Int, Symbol}
-    act2int::Dict{Symbol, Int}
-    int2act::Dict{Int, Symbol}
-end
-```
-This class is generic enough to create different child classes.
-
-
-## Interact with the Environment
-This framework was designed wi. So it is readily available for RL, the combined model can be incorporareted into an RL environment
-```
-function run_policy(env::AbstractEnv, policy::AbstractPolicy, hook::AbstractHook)
-    reset!(env)
-    hook(PreEpisodeStage(), policy, env)
-    while !env.done
-        hook(PreActStage(), policy, env)
-        a = policy(env)
-        env(a)
-        hook(PostActStage(), policy, env)
-    end
-    hook
+	<some other attributes>
 end
 ```
 
+### Gas Systems
+
+
+```
+mutable struct LinepackModel <: GasSystem
+    linepack::Float64
+    initial_linepack::Union{Float64, ClosedInterval{Float64}}
+    injection::Float64
+    max_injection::Float64
+end
+```
+
+### Custom Models
+
+You can easily create model that are bespoke to the particular . The only requirements features are:
+```
+step!(model::Model, t)
+control!(model::Model, controller::Controller, t)
+```
+namely how to evolve it and how to actuate it.
+
+
+### Controllers
+If no controller is defined the default control is *do nothing*. If a controller has no specific rules of a model type it will *do nothing*. The abstract control reads
+```
+function control!(pwr_sys::PowerSystem, gas_sys::GasSystem, controller::Union{Controller,Nothing}, t)
+    control!(pwr_sys, controller, model.t)
+    control!(gas_sys, controller, model.t)
+    nothing
+end
+```
+and it therefore assumed that the two systems can be actuated separately. Interactions must be stored locally during ``step!``.
 
 
 

@@ -6,8 +6,8 @@ mutable struct GasNetworkModel <: GasSystem
     ginfo::GasInfo
     sys
     prob::ODEProblem
-    u0::Vector{Float64} # the initial conditions
-    sol::Union{Vector{Vector{Float64}},ModelingToolkit.ODESolution}
+    u0::ModelingToolkit.ODESolution
+    sol::ModelingToolkit.ODESolution
     nodal_pressure::Vector{Float64}
     nodal_flows::Vector{Float64}
     gas_injections::Dict{Int,Float64}
@@ -37,7 +37,7 @@ function GasNetworkModel(;
     # run a simulation with constant boundary cond to get steady initial cond
     prob = ODEProblem(sys, Dict(), (0, 40_000));
     sol = solve(prob, save_everystep=false, save_start=false)
-    u0 = sol.u[end]
+    u0 = deepcopy(sol)
     
     n_sub = size(ginfo.nodes,1)
     nodal_pressure = zeros(n_sub) # will be populated later
@@ -47,20 +47,22 @@ function GasNetworkModel(;
 
     #redefine the problem to be based on directly on gas_sys quantities
     # TODO see if there is a cleaner way to do that
-    @mtkcompile sys = GasNetModel.GasSystem(ginfo=ginfo, dx=dx);
+    @mtkcompile sys = GasNetModel.GasSystem(ginfo=ginfo, dx=dx)
     q_nodal_local = (i,t) -> gas_sys.nodal_flows[i] 
     gas_sys.sys = substitute(sys, Dict(GasNetModel.q_nodal => q_nodal_local))
-    gas_sys.prob = ODEProblem(gas_sys.sys, gas_sys.u0, (0, T))
+    gas_sys.prob = ODEProblem(gas_sys.sys, gas_sys.u0.u[end], (0, T))
     gas_sys
 end
 
 
+
 function reset!(model::GasNetworkModel)
-    model.sol = [copy(model.u0)]
+    model.sol = deepcopy(model.u0)
+    get_nodal_pressure!(model) #update pressure
     nothing
 end
 
-function step!(pwr_sys::CongestionFreeModel, gas_sys::GasNetworkModel, t)
+function step!(pwr_sys::Union{CongestionFreeModel,OPFModel}, gas_sys::GasNetworkModel, t)
     # power dispatch, etc.
     step!(pwr_sys, t)
     
@@ -83,6 +85,7 @@ function step!(pwr_sys::CongestionFreeModel, gas_sys::GasNetworkModel, t)
     for (i, inj) in gas_sys.gas_injections
         gas_sys.nodal_flows[i] += inj
     end
+
     # run gas simulation
     run_gas_step!(gas_sys)
     
@@ -110,16 +113,17 @@ end
 
 
 function run_gas_step!(gas_sys::GasNetworkModel)
-    prob = gas_sys.prob
-    T = prob.tspan[end]
-    gas_sys.sol = solve(prob, save_everystep=false, save_start=false)
-    get_nodal_pressure!(gas_sys)
+    #prob = gas_sys.prob
+    #T = prob.tspan[end]
+    gas_sys.prob = ModelingToolkit.remake(gas_sys.prob; u0 = gas_sys.sol.u[1]) # update the problem with new init conditions
+    gas_sys.sol = solve(gas_sys.prob, save_everystep=false, save_start=false)
+    get_nodal_pressure!(gas_sys) #update pressure
     nothing
 end
 
 function display(model::GasNetworkModel)
     pressure = model.nodal_pressure
-    pmin, pmax = round(10*minimum(pressure))/10, round(10*maximum(pressure))/10
+    pmin, pmax = round(minimum(pressure), digits=1), round(maximum(pressure), digits=1)
     inj = values(model.gas_injections) |> sum
-    print("pressure=($pmin, $pmax) | inj=$inj | ")
+    print("pressure=(pmin:$pmin, pmax:$pmax) | inj=$inj | ")
 end
