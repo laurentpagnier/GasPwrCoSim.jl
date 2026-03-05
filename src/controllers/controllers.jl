@@ -1,5 +1,10 @@
 export control!
 struct NoController <: Controller
+    dummy::String # prevent recursive error
+end
+
+function NoController(;kwargs...)
+    NoController("dummy")
 end
 
 function reset!(controller::Controller)

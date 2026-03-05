@@ -6,9 +6,11 @@ mutable struct CombinedModel
     pwr_sys::PowerSystem
     gas_sys::GasSystem
     controller::Controller
-    dt::Float64
-    t::Float64
-    duration::Float64
+    logger::Logger
+    daemon::Daemon
+    dt::Float64 # in min
+    t::Float64 # in min
+    duration::Float64 # in min
 end
     
 
@@ -24,22 +26,40 @@ function CombinedModel(;
         gas_model = LinepackModel,
         pwr_model = CongestionFreeModel,
         control_model = NoController,
+        logger_model = NoLogger,
+        daemon_model = NoDaemon,
         dt = 5.0,
         duration = 100.0,
         kwargs...
     )   
     pwr_sys = pwr_model(;kwargs...)    
-    gas_sys = gas_model(;kwargs...)
+    gas_sys = gas_model(;dt=dt, kwargs...)
     controller = control_model(;kwargs...)
-    CombinedModel(pwr_sys, gas_sys, controller, dt, 0.0, duration)
+    daemon = daemon_model(;kwargs...)
+    logger = logger_model(;kwargs...)
+    CombinedModel(pwr_sys, gas_sys, controller, logger, daemon, dt, 0.0, duration)
 end
 
 
 function step!(model::CombinedModel)
+    perturb!(model)
     control!(model.pwr_sys, model.gas_sys, model.controller, model.t)
     step!(model.pwr_sys, model.gas_sys, model.t)
     model.t += model.dt
+    record!(model)
     nothing
+end
+
+
+function record!(model)
+    record!(model.logger, model.pwr_sys, model.t)
+    record!(model.logger, model.gas_sys, model.t)
+end
+
+
+function perturb!(model)
+    perturb!(model.daemon, model.pwr_sys, model.t)
+    perturb!(model.daemon, model.gas_sys, model.t)
 end
 
 

@@ -144,6 +144,6 @@ function display(model::OPFModel)
     demand = [l["pd"] for (i,l) in model.PMModel["load"]] |> sum
     demand = round(Int, model.PMModel["baseMVA"] * demand)
     shed =  round(Int, get_sys_shedding(model))
-    print("fleet=(main:$n_main, sec:$n_sec, off:$n_off) | shed=$shed | demand=$demand")
+    print("fleet=(main:$n_main, sec:$n_sec, off:$n_off) | shed=$shed | demand=$demand | ")
 end
 

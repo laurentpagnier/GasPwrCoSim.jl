@@ -25,7 +25,7 @@ function GasNetworkModel(;
         max_injections = Dict{Int,Float64}(1 => 193.77, 8 => 290.83),
         kwargs...
     )
-        
+    println(dt)
     ginfo = GasInfo(gas_folder)
     T = dt * 60 # convert to seconds
     @mtkcompile sys = GasNetModel.GasSystem(ginfo=ginfo, dx=dx);
@@ -52,6 +52,12 @@ function GasNetworkModel(;
     gas_sys.sys = substitute(sys, Dict(GasNetModel.q_nodal => q_nodal_local))
     gas_sys.prob = ODEProblem(gas_sys.sys, gas_sys.u0.u[end], (0, T))
     gas_sys
+end
+
+
+function get_linepack(model::GasNetworkModel)
+    return GasNetModel.compute_linepack(model.ginfo, model.sys,
+        model.sol, 10_000)[1]
 end
 
 
@@ -124,6 +130,7 @@ end
 function display(model::GasNetworkModel)
     pressure = model.nodal_pressure
     pmin, pmax = round(minimum(pressure), digits=1), round(maximum(pressure), digits=1)
+    linepack = round(GasPwrCoSim.get_linepack(model), digits=-4)
     inj = values(model.gas_injections) |> sum
-    print("pressure=(pmin:$pmin, pmax:$pmax) | inj=$inj | ")
+    print("pressure=(pmin:$pmin, pmax:$pmax) | inj=$inj | linepack=$linepack | ")
 end

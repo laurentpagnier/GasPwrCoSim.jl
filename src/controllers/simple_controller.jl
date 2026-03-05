@@ -96,15 +96,15 @@ end
 
 
 function control!(model::LinepackModel, controller::SimpleController, t)
-    if model.linepack < 50_000 
+    if model.linepack < 3.789e6
         model.injection = model.max_injection
-    elseif model.linepack > 60_000 
+    elseif model.linepack > 4.21E6
         model.injection = 0.0
     end
     
-    if model.linepack < 40_000 && controller.emergency_mode == :regular
+    if model.linepack < 3.368e6 && controller.emergency_mode == :regular
         controller.emergency_mode = :emergency
-    elseif model.linepack > 50_000 && controller.emergency_mode == :emergency
+    elseif model.linepack > 3.9995e6 && controller.emergency_mode == :emergency
         controller.emergency_mode = :regular
     end
     nothing
