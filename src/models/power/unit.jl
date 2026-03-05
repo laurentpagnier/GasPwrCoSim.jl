@@ -309,6 +309,10 @@ function get_fuel_input(output, pmax, unit_type;
         :ST_avg => (fl_hr = 10.8,  a = 0.068195, b = 0.851957, c = 0.078793),
     )
 )
+    # Follows California Energy Commission,"Updating Thermal Power Plant 
+    # Efficiency Measures and Operational Characteristics for 
+    # Production Cost Modeling", 2019
+
     #fl_hr [mmBtu/MWh]
     # output [MW]
     # pmax [MW]

@@ -65,8 +65,8 @@ function step!(model::CongestionFreeModel, t)
     end
     
     # compute load_shedding
-    gen = [u.p for u in model.units] |> sum
-    model.load_shedding = max(demand - gen, 0.0)
+    model.generation = [u.p for u in model.units] |> sum
+    model.load_shedding = max(demand - model.generation, 0.0)
     nothing
 end
 

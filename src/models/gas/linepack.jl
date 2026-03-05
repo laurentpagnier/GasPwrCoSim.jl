@@ -5,17 +5,19 @@ mutable struct LinepackModel <: GasSystem
     initial_linepack::Union{Float64, ClosedInterval{Float64}}
     injection::Float64
     max_injection::Float64
+    dt::Float64 # in sec to be consistent the network sim and unit fuel input
 end
 
 
 function LinepackModel(;
     gas_folder = "../data/gas_data",
-    initial_linepack = 60_000.0,
-    max_injection = 26_000.0,
+    initial_linepack = 4.21E6, # in kg
+    max_injection = 614.0, # in kg/s 
+    dt = 5, # still in min
     kwargs...
 )
     injection = 0.0
-    LinepackModel(initial_linepack, initial_linepack, injection, max_injection)
+    LinepackModel(initial_linepack, initial_linepack, injection, max_injection, dt*60)
 end
 
 
@@ -24,7 +26,7 @@ function reset!(model::LinepackModel)
         rand(model.initial_linepack)
 end
 
-
+#=
 function step!(pwr_sys::CongestionFreeModel, gas_sys::LinepackModel, t)
     # power dispatch, etc.
     step!(pwr_sys, t)
@@ -44,7 +46,7 @@ function step!(pwr_sys::CongestionFreeModel, gas_sys::LinepackModel, t)
     end
     
     # add gas injection (if any)
-    gas_sys.linepack += gas_sys.injection
+    gas_sys.linepack += gas_sys.injection 
     
     gas_sys.linepack = max(gas_sys.linepack, 0.0)
 
@@ -56,13 +58,14 @@ function step!(pwr_sys::CongestionFreeModel, gas_sys::LinepackModel, t)
     end
     nothing
 end
+=#
 
-
-function step!(pwr_sys::OPFModel, gas_sys::LinepackModel, t)
+function step!(pwr_sys::Union{OPFModel,CongestionFreeModel}, gas_sys::LinepackModel, t)
     # power dispatch, etc.
     step!(pwr_sys, t)
     
     # compute the gas gas_withdrawal
+    gas_withdrawal = 0.0
     for u in pwr_sys.units
         if u.status == :main_fuel
             coeff = 1.0
@@ -73,12 +76,11 @@ function step!(pwr_sys::OPFModel, gas_sys::LinepackModel, t)
         else
             coeff = 0.0
         end
-        gas_sys.linepack -= coeff * u.fuel_input(u.p)
+        gas_withdrawal += coeff * u.fuel_input(u.p)
     end
     
-    # add gas injection (if any)
-    gas_sys.linepack += gas_sys.injection
-    
+    # injection and withdrawal are assumed to be constant over the step step
+    gas_sys.linepack += (gas_sys.injection - gas_withdrawal) * gas_sys.dt
     gas_sys.linepack = max(gas_sys.linepack, 0.0)
 
     # if linepack exhausted, stop remaining units
@@ -95,5 +97,5 @@ end
 
 function display(model::LinepackModel)
     linepack = model.linepack
-    print("linepack=$(round(Int,linepack)) | ")
+    print("linepack=$(round(Int,linepack)) | inj=$(model.injection) | ")
 end
