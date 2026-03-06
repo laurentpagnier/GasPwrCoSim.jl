@@ -1,3 +1,5 @@
+export CombinedLogger
+
 struct CombinedLogger <: Logger
     loggers::Dict{Symbol, Logger}
 end

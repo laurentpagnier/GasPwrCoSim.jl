@@ -1,3 +1,5 @@
+export ElectricLogger
+
 struct ElectricLogger <: Logger
     demand::Vector{Float64}
     shed::Vector{Float64}

@@ -33,7 +33,7 @@ function control!(model::Union{CongestionFreeModel,OPFModel}, controller::Simple
         avail_units = findall([u.status == :main_fuel for u in units])
         #avail_units = findall((env.params.class .== policy.favored_class) .& is_on_main)
         n = length(avail_units)
-        if avail_act > 0 && length(avail_units) > 0
+        while avail_act > 0 && length(avail_units) > 0
             id = rand(1:length(avail_units))
             action[avail_units[id]] = :transition
             deleteat!(avail_units, id)

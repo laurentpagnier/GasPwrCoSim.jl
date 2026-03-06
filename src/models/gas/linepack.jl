@@ -12,7 +12,7 @@ end
 function LinepackModel(;
     gas_folder = "../data/gas_data",
     initial_linepack = 4.21E6, # in kg
-    max_injection = 614.0, # in kg/s 
+    max_injection = 484.6, # in kg/s 
     dt = 5, # still in min
     kwargs...
 )

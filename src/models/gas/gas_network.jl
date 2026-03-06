@@ -25,7 +25,6 @@ function GasNetworkModel(;
         max_injections = Dict{Int,Float64}(1 => 193.77, 8 => 290.83),
         kwargs...
     )
-    println(dt)
     ginfo = GasInfo(gas_folder)
     T = dt * 60 # convert to seconds
     @mtkcompile sys = GasNetModel.GasSystem(ginfo=ginfo, dx=dx);

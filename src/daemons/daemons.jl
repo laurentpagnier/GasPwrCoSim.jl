@@ -11,4 +11,12 @@ function perturb!(daemon::Daemon, system::Union{PowerSystem,GasSystem}, t::Float
 end
 
 
-include("fixeddurationfault.jl")
+function copy!(daemon::Daemon, system::Union{PowerSystem,GasSystem})
+    nothing # by default nothing nothing
+end
+
+function restore!(daemon::Daemon, system::Union{PowerSystem,GasSystem})
+    nothing # by default nothing nothing
+end
+
+include("fixed_duration_gas_fault.jl")

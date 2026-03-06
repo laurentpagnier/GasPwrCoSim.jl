@@ -1,3 +1,5 @@
+export Logger, NoLogger
+
 struct NoLogger <: Logger
     dummy::String # prevent recursive error
 end

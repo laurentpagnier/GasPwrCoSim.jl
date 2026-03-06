@@ -1,3 +1,5 @@
+export LinepackLogger
+
 struct LinepackLogger <: Logger
     linepack::Vector{Float64}
     time::Vector{Float64}

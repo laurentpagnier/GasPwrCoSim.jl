@@ -16,6 +16,8 @@ end
 
 function reset!(model::CombinedModel)
     model.t = 0.0
+    restore!(model.daemon, model.pwr_sys)
+    restore!(model.daemon, model.gas_sys)
     reset!(model.pwr_sys)
     reset!(model.gas_sys)
     reset!(model.controller)
@@ -37,6 +39,8 @@ function CombinedModel(;
     controller = control_model(;kwargs...)
     daemon = daemon_model(;kwargs...)
     logger = logger_model(;kwargs...)
+    copy!(daemon, gas_sys)
+    copy!(daemon, pwr_sys)
     CombinedModel(pwr_sys, gas_sys, controller, logger, daemon, dt, 0.0, duration)
 end
 
@@ -45,8 +49,8 @@ function step!(model::CombinedModel)
     perturb!(model)
     control!(model.pwr_sys, model.gas_sys, model.controller, model.t)
     step!(model.pwr_sys, model.gas_sys, model.t)
-    model.t += model.dt
     record!(model)
+    model.t += model.dt
     nothing
 end
 
