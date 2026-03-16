@@ -2,11 +2,12 @@
 
 ## Description
 
+```
+mutable struct PowerSystem
     units::Vector{Unit}
-    demand::Union{Extrapolation, Function}
+    demand::Extrapolation
     reserve::Float64
     generation::Float64
     load_shedding::Float64
-    load_shedding_cost::Float64
-
-
+end
+```

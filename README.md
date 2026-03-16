@@ -9,12 +9,21 @@ Install julia by visiting: https://julialang.org/downloads/.
 Download using git,  with ``git clone --recurse-submodules <repo>``
 here \<repo\> depends on the version you want, default is ``git@github.com:laurentpagnier/GasPwrCoSim.jl.git``
 
+This will require to set up a [ssh key](https://docs.github.com/en/authentication/connecting-to-github-with-ssh).
 
-The package is in active development. We recommend to either create an environment and add the package in development mode. 
-**Environment**
+This could be shortcutted by is to use https instead, e.g.:
+```
+git clone https://github.com/laurentpagnier/GasPwrCoSim.jl.git
+```
+then go in GasPwrCoSim.jl/deps and clone GasNetModel.jl with
+```
+git clone https://github.com/laurentpagnier/GasNetModel.jl.git
+```
+This won't offer a way to ``push`` to the repo, but allow for simple updates with ``pull``.
+
+The package is in active development. We recommend to add the package in development mode. 
 1. open pkg manager (press ])
-2. ``generate <my_env>``
-3. ``dev git@github.com:laurentpagnier/GasPwrCoSim.jl.git``
+2. ``dev git@github.com:laurentpagnier/GasPwrCoSim.jl.git``
 
 
 ### Deprecated 
@@ -43,7 +52,7 @@ If you used this package, please cite our work as
   organization={IEEE}
 }
 ```
-Le
+and
 ```
 @inproceedings{hyett2024differentiable,
   title={Differentiable Simulator For Dynamic \& Stochastic Optimal Gas \& Power Flows},
@@ -55,108 +64,7 @@ Le
 }
 ```
 
-
 ## Description
 
-The main structure provided by this package is a combined model:
-
-```
-mutable struct CombinedModel
-    pwr_sys::PowerSystem
-    gas_sys::GasSystem
-    controller::Controller
-    dt::Float64
-    t::Float64
-    duration::Float64
-end
-```
-It encompasses two infrastructure models and a controller that actuates  some of the joint system (but not necessary all of it). 
-
-
-As of today, this package currently supports the following models:
-*Gas Systems:*
-- LinepackModel
-- GasNetworkModel
-
-*Power Systems:*
-- CongestionFreeModel
-- OPFModel
-
-More models will be added in future releases. 
-
-**Evolution:** Basically a run consists of 
-```
-reset!(model)
-while(model.t < model.duration)
-    step!(model)
-end
-```
-In detail, a time step starts the controller acting on the two systems, then they are evolved for the duration of the time step.
-```
-function step!(model::CombinedModel)
-    control!(model.pwr_sys, model.gas_sys, model.controller, model.t)
-    step!(model.pwr_sys, model.gas_sys, model.t)
-    model.t += model.dt
-end
-```
-
-
-### Power Systems
-As an example let's have a look at the ```CongestionFree``` model
-```
-mutable struct PowerSystem
-    units::Vector{Unit}
-    demand::Extrapolation
-    reserve::Float64
-    generation::Float64
-    load_shedding::Float64
-end
-```
-Units are defined as
-```
-mutable struct Unit
-    pmin::Real
-    pmax::Real
-    p::Real
-    gas_loc::Union{Int, Nothing}
-    pwr_bus::Int
-    status::Symbol
-	<some other attributes>
-end
-```
-
-### Gas Systems
-
-
-```
-mutable struct LinepackModel <: GasSystem
-    linepack::Float64
-    initial_linepack::Union{Float64, ClosedInterval{Float64}}
-    injection::Float64
-    max_injection::Float64
-end
-```
-
-### Custom Models
-
-You can easily create model that are bespoke to the particular . The only requirements features are:
-```
-step!(model::Model, t)
-control!(model::Model, controller::Controller, t)
-```
-namely how to evolve it and how to actuate it.
-
-
-### Controllers
-If no controller is defined the default control is *do nothing*. If a controller has no specific rules of a model type it will *do nothing*. The abstract control reads
-```
-function control!(pwr_sys::PowerSystem, gas_sys::GasSystem, controller::Union{Controller,Nothing}, t)
-    control!(pwr_sys, controller, model.t)
-    control!(gas_sys, controller, model.t)
-    nothing
-end
-```
-and it therefore assumed that the two systems can be actuated separately. Interactions must be stored locally during ``step!``.
-
-
+See documentation.
 
