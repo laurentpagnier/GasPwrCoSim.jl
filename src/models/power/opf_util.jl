@@ -63,7 +63,7 @@ function objective_add_shedding_cost(pm::DCWithShedPPowerModel)
             shed_cost += shed[i] * load["ENS_price"]
         end
         for (i, gen) in ref(pm, n, :gen)
-            shed_cost += shed_g[i] * 10000
+            shed_cost += shed_g[i] * 5000
         end
         
         set_objective_function(pm.model,objective_function(pm.model) + shed_cost)
@@ -91,7 +91,6 @@ function PowerModels.constraint_power_balance(pm::DCWithShedPPowerModel, n::Int,
         - sum(gs for gs in values(bus_gs))*1.0^2
         + sum(shed[i] for (i,pd) in bus_pd)
     )
-
     if PowerModels._IM.report_duals(pm)
         sol(pm, n, :bus, i)[:lam_kcl_r] = cstr
         sol(pm, n, :bus, i)[:lam_kcl_i] = NaN

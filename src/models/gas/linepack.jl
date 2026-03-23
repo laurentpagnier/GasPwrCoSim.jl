@@ -86,7 +86,7 @@ function step!(pwr_sys::Union{OPFModel,CongestionFreeModel}, gas_sys::LinepackMo
     # if linepack exhausted, stop remaining units
     for u in pwr_sys.units
         if gas_sys.linepack == 0 && is_on_gas(u)
-            u.status = :off
+            u.status = :offline
         end
     end
     nothing

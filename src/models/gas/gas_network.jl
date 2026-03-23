@@ -98,7 +98,7 @@ function step!(pwr_sys::Union{CongestionFreeModel,OPFModel}, gas_sys::GasNetwork
     get_nodal_pressure!(gas_sys)
     for u in pwr_sys.units
         if gas_sys.nodal_pressure[u.gas_loc] < u.pressure_out && is_on_gas(u)
-            u.status = :off
+            u.status = :offline
         end
     end
     nothing

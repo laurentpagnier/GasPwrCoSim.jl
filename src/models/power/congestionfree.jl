@@ -34,7 +34,7 @@ function CongestionFreeModel(;
 end
 
 function reset!(model::CongestionFreeModel)
-    model.units .|>  u -> u.status = :off
+    model.units .|>  u -> u.status = :offline
     model.load_shedding = 0.0
 
     demand = get_current_demand(model, 0.0)
@@ -83,7 +83,7 @@ get_current_demand(model, t::Float64) = model.demand(60*t)
 function display(model::CongestionFreeModel)
     n_main = [u.status == :main_fuel for u in model.units] |> sum
     n_sec = [u.status == :sec_fuel for u in model.units] |> sum
-    n_off = [u.status == :off for u in model.units] |> sum
+    n_off = [u.status == :offline for u in model.units] |> sum
     #shed = get_sys_shedding(model) < 1E-5 ? 0.0 : get_sys_shedding(model)
     shed = round(Int, get_sys_shedding(model)) 
     print("fleet=(main:$n_main, sec:$n_sec, off:$n_off) | shed=$shed | ")

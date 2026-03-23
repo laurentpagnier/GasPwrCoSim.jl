@@ -21,10 +21,10 @@ end
 
 
 function Unit(;pmin = 75, pmax = 125, turbine_efficiency = 0.1,
-    pressure_out = 50, gas_loc = nothing,  status=:off, p = 0.0,
+    pressure_out = 50, gas_loc = nothing,  status=:offline, p = 0.0,
     cost = Dict(:main_cost => 30, :sec_cost => 400),
     prob = Dict(:p_abort => 0.01, :p_succ => 0.98, :p_fail => 0.01, :p_start => 0.95),
-    state2int = Dict{Symbol, Int}(:main_fuel => 1, :sec_fuel => 2, :off => 3),
+    state2int = Dict{Symbol, Int}(:main_fuel => 1, :sec_fuel => 2, :offline => 3),
     int2act = Dict{Int,Symbol}(1 => :do_nothing, 2 => :transition, 3 => :shutdown,
             4 => :start_main, 5 => :start_sec), 
     trans_steps = 1, start_steps = 1, pwr_bus = 0)
@@ -77,10 +77,10 @@ function action_on_unit!(unit::Unit, a::Symbol)
             elseif outcome == 2
                 unit.status = unit.trans_steps > 0 ? :toward_sec_1 : :sec_fuel
             else
-                unit.status = :off
+                unit.status = :offline
             end
         elseif a == :shutdown
-            unit.status = :off
+            unit.status = :offline
         else
             if a != :do_nothing
                 @warn "Action \"$(a)\" is not available when unit status is \"$(unit.status)\". Used :do_nothing instead."
@@ -99,11 +99,10 @@ function action_on_unit!(unit::Unit, a::Symbol)
             elseif outcome == 2
                 unit.status = unit.trans_steps > 0 ? :toward_main_1 : :main_fuel
             else
-                unit.status = :off
+                unit.status = :offline
             end  
         elseif a == :shutdown
-            unit.status = :off
-        else
+            unit.status = :offline
             if a != :do_nothing
                 @warn "Action \"$(a)\" is not available when unit status is \"$(unit.status)\". Used :do_nothing instead."
             end
@@ -111,7 +110,7 @@ function action_on_unit!(unit::Unit, a::Symbol)
         changed = true
     end
     
-    if unit.status == :off && changed == false
+    if unit.status == :offline && changed == false
 
         if a == :start_main
             outcome = rand(Categorical([unit.prob[:p_start]; 1-unit.prob[:p_start]]))
@@ -119,7 +118,7 @@ function action_on_unit!(unit::Unit, a::Symbol)
                 #unit.status = :main_fuel
                 unit.status = unit.start_steps > 0 ? :start_main_1 : :main_fuel
             else
-                unit.status = :off
+                unit.status = :offline
             end  
         elseif a == :start_sec
             outcome = rand(Categorical([unit.prob[:p_start]; 1-unit.prob[:p_start]]))
@@ -127,7 +126,7 @@ function action_on_unit!(unit::Unit, a::Symbol)
                 #unit.status = :sec_fuel
                 unit.status = unit.start_steps > 0 ? :start_sec_1 : :sec_fuel
             else
-                unit.status = :off
+                unit.status = :offline
             end 
         else
             if a != :do_nothing
@@ -141,7 +140,7 @@ function action_on_unit!(unit::Unit, a::Symbol)
     for i = 1:unit.trans_steps-1
         if unit.status == Symbol("toward_sec_$i")  && changed == false
             if a == :shutdown
-                unit.status = :off
+                unit.status = :offline
             else
                 if a != :do_nothing
                     @warn "Action \"$(a)\" is not available when unit status is \"$(unit.status)\". Used :do_nothing instead"
@@ -152,7 +151,7 @@ function action_on_unit!(unit::Unit, a::Symbol)
                 elseif outcome == 2
                     unit.status = Symbol("toward_sec_$(i+1)")
                 else
-                    unit.status = :off
+                    unit.status = :offline
                 end
             end
             changed = true
@@ -162,7 +161,7 @@ function action_on_unit!(unit::Unit, a::Symbol)
     if unit.status == Symbol("toward_sec_$(unit.trans_steps)") && changed == false
 
         if a == :shutdown
-            unit.status = :off
+            unit.status = :offline
         else
             if a != :do_nothing
                 @warn "Action \"$(a)\" is not available when unit status is \"$(unit.status)\". Used :do_nothing instead."
@@ -173,7 +172,7 @@ function action_on_unit!(unit::Unit, a::Symbol)
             elseif outcome == 2
                 unit.status = :sec_fuel
             else
-                unit.status = :off
+                unit.status = :offline
             end
         end
         changed = true
@@ -182,7 +181,7 @@ function action_on_unit!(unit::Unit, a::Symbol)
     for i = 1:unit.trans_steps-1
         if unit.status == Symbol("toward_main_$i")  && changed == false
             if a == :shutdown
-                unit.status = :off
+                unit.status = :offline
             else
                 if a != :do_nothing
                     @warn "Action \"$(a)\" is not available when unit status is \"$(unit.status)\". Used :do_nothing instead"
@@ -193,7 +192,7 @@ function action_on_unit!(unit::Unit, a::Symbol)
                 elseif outcome == 2
                     unit.status = Symbol("toward_main_$(i+1)")
                 else
-                    unit.status = :off
+                    unit.status = :offlibe
                 end
             end
             changed = true
@@ -203,7 +202,7 @@ function action_on_unit!(unit::Unit, a::Symbol)
     if unit.status == Symbol("toward_sec_$(unit.trans_steps)") && changed == false
 
         if a == :shutdown
-            unit.status = :off
+            unit.status = :offline
         else
             if a != :do_nothing
                 @warn "Action \"$(a)\" is not available when unit status is \"$(unit.status)\". Used :do_nothing instead."
@@ -214,7 +213,7 @@ function action_on_unit!(unit::Unit, a::Symbol)
             elseif outcome == 2
                 unit.status = :main_fuel
             else
-                unit.status = :off
+                unit.status = :offline
             end
         end
         changed = true
@@ -225,7 +224,7 @@ function action_on_unit!(unit::Unit, a::Symbol)
     for i = 1:unit.start_steps-1
         if unit.status == Symbol("start_main_$i")  && changed == false
             if a == :shutdown
-                unit.status = :off
+                unit.status = :offline
             else
                 if a != :do_nothing
                     @warn "Action \"$(a)\" is not available when unit status is \"$(unit.status)\". Used :do_nothing instead"
@@ -234,7 +233,7 @@ function action_on_unit!(unit::Unit, a::Symbol)
                 if outcome == 1
                     unit.status = Symbol("start_main_$(i+1)")
                 else
-                    unit.status = :off
+                    unit.status = :offline
                 end
             end
             changed = true
@@ -243,7 +242,7 @@ function action_on_unit!(unit::Unit, a::Symbol)
 
     if unit.status == Symbol("start_main_$(unit.start_steps)") && changed == false
         if a == :shutdown
-            unit.status = :off
+            unit.status = :offline
         else
             if a != :do_nothing
                 @warn "Action \"$(a)\" is not available when unit status is \"$(unit.status)\". Used :do_nothing instead."
@@ -252,7 +251,7 @@ function action_on_unit!(unit::Unit, a::Symbol)
             if outcome == 1
                 unit.status = :main_fuel
             else
-                unit.status = :off
+                unit.status = :offline
             end
         end
         changed = true
@@ -261,7 +260,7 @@ function action_on_unit!(unit::Unit, a::Symbol)
     for i = 1:unit.start_steps-1
         if unit.status == Symbol("start_sec_$i")  && changed == false
             if a == :shutdown
-                unit.status = :off
+                unit.status = :offline
             else
                 if a != :do_nothing
                     @warn "Action \"$(a)\" is not available when unit status is \"$(unit.status)\". Used :do_nothing instead"
@@ -270,7 +269,7 @@ function action_on_unit!(unit::Unit, a::Symbol)
                 if outcome == 1
                     unit.status = Symbol("start_sec_$(i+1)")
                 else
-                    unit.status = :off
+                    unit.status = :offline
                 end
             end
             changed = true
@@ -279,7 +278,7 @@ function action_on_unit!(unit::Unit, a::Symbol)
 
     if unit.status == Symbol("start_sec_$(unit.start_steps)") && changed == false
         if a == :shutdown
-            unit.status = :off
+            unit.status = :offline
         else
             if a != :do_nothing
                 @warn "Action \"$(a)\" is not available when unit status is \"$(unit.status)\". Used :do_nothing instead."
@@ -288,7 +287,7 @@ function action_on_unit!(unit::Unit, a::Symbol)
             if outcome == 1
                 unit.status = :sec_fuel
             else
-                unit.status = :off
+                unit.status = :offline
             end
         end
         changed = true
