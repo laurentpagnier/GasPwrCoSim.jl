@@ -1,6 +1,6 @@
-export ElectricLogger
+export ElectricLogger, compute_shedding_metrics
 
-struct ElectricLogger <: Logger
+mutable struct ElectricLogger <: Logger
     demand::Vector{Float64}
     shed::Vector{Float64}
     gen::Vector{Float64}
@@ -9,6 +9,14 @@ end
 
 function ElectricLogger(; kwargs...)
     ElectricLogger(Float64[], Float64[], Float64[], Float64[])
+end
+
+
+function GasPwrCoSim.reset!(logger::ElectricLogger)
+    logger.demand = Float64[]
+    logger.shed = Float64[]
+    logger.gen = Float64[]
+    logger.time = Float64[]
 end
 
 
@@ -27,4 +35,18 @@ function record!(logger::ElectricLogger, elc_sys::OPFModel, t::Float64)
 end
     
 
+
+function compute_shedding_metrics(logger::ElectricLogger)
+    ENS = 0.0
+    shedmax = 0.0
+    told = 0.0
+    for (t,s) in zip(logger.time, logger.shed)
+        if shedmax < s
+            shedmax = s
+        end
+        ENS += s*(t-told) / 60 # to convert MWh
+        told = t
+    end
+    ENS, shedmax
+end
 

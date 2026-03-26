@@ -21,6 +21,7 @@ function reset!(model::CombinedModel)
     reset!(model.pwr_sys)
     reset!(model.gas_sys)
     reset!(model.controller)
+    reset!(model.logger)
     nothing
 end
 

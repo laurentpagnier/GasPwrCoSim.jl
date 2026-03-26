@@ -13,7 +13,7 @@ end
 
 function GasPwrCoSim.perturb!(daemon::FixedDurationGasFault, gas_sys::LinepackModel, t::Float64)
     if t > daemon.t_start
-        gas_sys.max_injection = deamon.reduction * daemon.stored_values["max_injection"]
+        gas_sys.max_injection = (1.0 - deamon.reduction) * daemon.stored_values["max_injection"]
         gas_sys.injection = min(gas_sys.injection, gas_sys.max_injection)
     end
     if t > daemon.t_start + daemon.duration
@@ -27,7 +27,7 @@ function GasPwrCoSim.perturb!(daemon::FixedDurationGasFault,  gas_sys::GasNetwor
     if t > daemon.t_start
         if typeof(daemon.reduction) <: Real
             for (i, inj) = gas_sys.max_injections
-                gas_sys.max_injections[i] = daemon.reduction * daemon.stored_values["max_injections"][i]
+                gas_sys.max_injections[i] = (1.0 - daemon.reduction) * daemon.stored_values["max_injections"][i]
                 gas_sys.gas_injections[i] = min(gas_sys.gas_injections[i], gas_sys.max_injections[i])
             end
         else

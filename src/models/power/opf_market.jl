@@ -53,6 +53,34 @@ function update_gen_status!(model::OPFModel)
 end
 
 
+function get_hourly_generation_cost(model::OPFModel)
+    cost = 0.0
+    sb = model.PMModel["baseMVA"]
+    for (i, g) in model.PMModel["gen"]
+        marginal_cost = is_on_gas(model.units[parse(Int,i)]) ? model.units[parse(Int,i)].cost[:main_cost] : 
+            model.units[parse(Int,i)].cost[:sec_cost]
+        cost += sb*g["pg"] * marginal_cost
+    end
+    cost
+end
+
+function get_hourly_shedding_cost(model::OPFModel)
+    shed = 0.0
+    sb = model.PMModel["baseMVA"]
+    for (i,l) in model.PMModel["load"]
+        shed += sb*l["shed"] * l["ENS_price"]
+    end
+    
+    for (i,g) in model.PMModel["gen"]
+        if "shed_g" ∈ keys(g)
+            shed += sb*g["shed_g"] * 10000 #!!!!!! FIX THIS
+        end
+    end
+    
+    shed
+end
+
+
 function get_sys_shedding(model::OPFModel)
     shed = 0.0
     sb = model.PMModel["baseMVA"]

@@ -19,3 +19,9 @@ function CombinedLogger(;logger_list = [], kwargs...)
 end
 
 (l::CombinedLogger)(s::Symbol) = l.loggers[s]
+
+function reset!(logger::CombinedLogger)
+    for (tag, l) in logger.loggers
+    	reset!(l)
+    end
+end
