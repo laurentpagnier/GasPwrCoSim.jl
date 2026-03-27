@@ -296,8 +296,11 @@ function action_on_unit!(unit::Unit, a::Symbol)
 end
 
 
-is_generating(u::Unit) = u.status in [:main_fuel; :sec_fuel] || contains(string(u.status),"toward")
-is_on_gas(u::Unit) = u.status == :main_fuel || contains(string(u.status),"toward_sec")
+
+is_transitioning(u::Unit) = contains(string(u.status), "toward")
+is_starting(u::Unit) = contains(string(u.status), "start")
+is_generating(u::Unit) = u.status in [:main_fuel; :sec_fuel] || contains(string(u.status), "toward")
+is_on_gas(u::Unit) = u.status == :main_fuel || contains(string(u.status), "toward_sec")
 
 function get_fuel_input(output, pmax, unit_type;
     unit_type_params = Dict(

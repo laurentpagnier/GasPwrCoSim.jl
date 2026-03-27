@@ -15,6 +15,8 @@ function NoLogger(;kwargs...)
 end
 
 include("combined_logger.jl")
-include("linepack_logger.jl")
-include("electric_logger.jl")
 include("cost_logger.jl")
+include("electric_logger.jl")
+include("linepack_logger.jl")
+include("workload_logger.jl")
+
