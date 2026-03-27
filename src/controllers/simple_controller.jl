@@ -19,8 +19,12 @@ function display(controller::SimpleController)
 end
 
 function control!(model::CongestionFreeModel, controller::SimpleController, t)
-    
-    avail_act = copy(controller.max_act)
+    #check the number of busy unit
+    # TODO check if it's the last step of the process, in which case it 
+    # shouldn't count as busy
+    used_act = sum([is_starting(u) || is_transitioning(u) for u in model.units])
+    avail_act = max(controller.max_act - used_act, 0.0)
+    #avail_act = copy(controller.max_act)
     units = model.units
     action = repeat([:do_nothing],length(units))
     
@@ -76,24 +80,10 @@ end
 
 
 function GasPwrCoSim.control!(model::OPFModel, controller::SimpleController, t)
-    # prepare the PMModel to run an OPF
-    #=
-    GasPwrCoSim.update_demand!(model, t)
-    # reset the MP case and and run an OPF
-    for (i, g) in model.pwr_sys.PMModel["gen"]
-        if "shed_g" ∈ keys(g)
-            g["shed_g"] = 0.0 # reset
-        end
-        g["pg"] = 0.0 # reset power outputs
-    end
-    for (i, l) in model.pwr_sys.PMModel["load"]
-        if "shed" ∈ keys(l)
-            l["shed"] = 0.0 # reset
-        end
-    end
-    =#
-    
-    avail_act = copy(controller.max_act)
+
+    #check the number of busy unit
+    used_act = sum([is_starting(u) || is_transitioning(u) for u in model.units])
+    avail_act = max(controller.max_act - used_act, 0.0)
     units = model.units
     action = repeat([:do_nothing],length(units))
     
@@ -155,15 +145,6 @@ function GasPwrCoSim.control!(model::OPFModel, controller::SimpleController, t)
             i += 1
         end
     end
-
-    #=
-    GasPwrCoSim.update_gen_status!(model.pwr_sys)
-
-    res = GasPwrCoSim.solve_model(model.pwr_sys.PMModel, GasPwrCoSim.DCWithShedPPowerModel,
-        GasPwrCoSim.optimizer_with_attributes(GasPwrCoSim.Ipopt.Optimizer, "print_level" =>0),
-        GasPwrCoSim.build_opf_w_shed, setting=Dict("output" => Dict("duals" => true)))
-    GasPwrCoSim.PowerModels.update_data!(model.pwr_sys.PMModel, res["solution"])
-    =#
 
     for (i, a) in enumerate(action)
         GasPwrCoSim.action_on_unit!(units[i], a)
