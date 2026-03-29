@@ -192,7 +192,7 @@ function action_on_unit!(unit::Unit, a::Symbol)
                 elseif outcome == 2
                     unit.status = Symbol("toward_main_$(i+1)")
                 else
-                    unit.status = :offlibe
+                    unit.status = :offline
                 end
             end
             changed = true
@@ -297,10 +297,17 @@ end
 
 
 
-is_transitioning(u::Unit) = contains(string(u.status), "toward")
+is_trans_main(u::Unit) = contains(string(u.status), "toward_main")
+is_start_main(u::Unit) = contains(string(u.status), "start_main")
+is_trans_sec(u::Unit) = contains(string(u.status), "toward_sec")
+is_start_sec(u::Unit) = contains(string(u.status), "start_sec")
+is_offline(u::Unit) = u.status == :offline
+is_transitioning(u::Unit) = contains(string(u.status), "toward_")
 is_starting(u::Unit) = contains(string(u.status), "start")
 is_generating(u::Unit) = u.status in [:main_fuel; :sec_fuel] || contains(string(u.status), "toward")
 is_on_gas(u::Unit) = u.status == :main_fuel || contains(string(u.status), "toward_sec")
+is_on_main(u::Unit) = u.status == :main_fuel
+is_on_sec(u::Unit) = u.status == :sec_fuel
 
 function get_fuel_input(output, pmax, unit_type;
     unit_type_params = Dict(
@@ -359,63 +366,3 @@ function create_fleet(;
 
     units
 end
-
-
-#=
-function create_fleet(;
-        pwr_folder = "../data/power_data",
-        prob_per_class = Dict(
-            :super_reliable => Dict(:p_abort => 0.01, :p_succ => 0.98, :p_fail => 0.01, :p_start => 0.95),
-            :reliable => Dict(:p_abort => 0.05, :p_succ => 0.9, :p_fail => 0.05, :p_start => 0.90),
-            :fairly_reliable => Dict(:p_abort => 0.10, :p_succ => 0.8, :p_fail => 0.10, :p_start => 0.80),
-            :unreliable => Dict(:p_abort => 0.15, :p_succ => 0.70, :p_fail => 0.15, :p_start => 0.70)
-        ),
-        state2int = Dict{Symbol, Int}(:main_fuel => 1, :sec_fuel => 2, :off => 3),
-        int2act = Dict{Int,Symbol}(1 => :do_nothing, 2 => :transition, 3 => :shutdown,
-            4 => :start_main, 5 => :start_sec), 
-        class = :reliable,
-        dt = 5.0
-)
-
-    # load units
-    df = DataFrame(CSV.File(joinpath(pwr_folder, "units.csv")))
-    units = Unit[]
-    for d in eachrow(df)
-        push!(units, Unit(pmin = d.p_min, pmax = d.p_max, gas_loc = d."station #",
-            cost = Dict(:main_cost => d.main_cost, :sec_cost => d.sec_cost),
-            prob = prob_per_class[Symbol(class)],
-            trans_steps = div(d.transition_duration, dt)-1,
-            start_steps = div(d.start_duration, dt)-1))
-    end
-    
-    max_trans_steps = [u.trans_steps for u in units] |> maximum
-    max_start_steps = [u.start_steps for u in units] |> maximum
-    for i = 1:max_trans_steps
-        push!(state2int, Symbol("toward_sec_$i") => length(state2int)+1)
-    end
-    
-    for i = 1:max_trans_steps
-        push!(state2int, Symbol("toward_main_$i") => length(state2int)+1)
-    end
-    
-    for i = 1:max_start_steps
-        push!(state2int, Symbol("start_main_$i") => length(state2int)+1)
-    end
-    
-    for i = 1:max_start_steps
-        push!(state2int, Symbol("start_sec_$i") => length(state2int)+1)
-    end
-
-    # create the two reciprocal dictionaries
-    act2int = Dict{Symbol,Int64}()
-    for e in int2act
-        push!(act2int, e.second => e.first)
-    end
-
-    int2state = Dict{Int64,Symbol}()
-    for e in state2int
-        push!(int2state, e.second => e.first)
-    end
-    units, state2int, int2state, act2int, int2act
-end
-=#
