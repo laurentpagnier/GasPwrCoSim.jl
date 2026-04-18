@@ -212,7 +212,7 @@ function reset!(model::OPFModel)
             if g["shed_g"] > 1E-3
                 #missing_power += g["pg"] - g["shed_g"]
                 missing_power += g["pmax"]
-                model.units[parse(Int,i)].status = :off
+                model.units[parse(Int,i)].status = :offline
             end
             g["shed_g"] = 0.0 # reset power outputs
         end
